@@ -10,302 +10,282 @@
 
 namespace s21 {
 
-    template <class T>
-    class vector {
-    public:
-        using value_type = T;
-        using reference = T &;
-        using const_reference = const T &;
-        using iterator = T *;
-        using const_iterator = const T *;
-        using size_type = std::size_t;
+template <class T>
+class vector {
+ public:
+  // Member types
+  using value_type = T;
+  using reference = T &;
+  using const_reference = const T &;
+  using iterator = T *;
+  using const_iterator = const T *;
+  using size_type = std::size_t;
 
-    private:
-        size_type size_ = 0;
-        size_type capacity_ = 0;
-        iterator array_ = nullptr;
+ private:
+  size_type size_ = 0;
+  size_type capacity_ = 0;
+  iterator array_ = nullptr;
+  // Helper function to reallocate memory
+  void ReallocVec(size_type new_capacity_) {
+    iterator tmp = new value_type[new_capacity_];
+    for (size_type i = 0; i < size_; ++i) tmp[i] = std::move(array_[i]);
 
-        void ReallocVec(size_type new_capacity_) {
-            iterator tmp = new value_type[new_capacity_];
-            for (size_type i = 0; i < size_; ++i)
-                tmp[i] = std::move(array_[i]);
+    delete[] array_;
+    array_ = tmp;
+    capacity_ = new_capacity_;
+  }
 
-            delete[] array_;
-            array_ = tmp;
-            capacity_ = new_capacity_;
-        }
-    public:
-        vector() {}
+ public:
+  // Constructors
+  vector() {}
 
-        explicit vector(size_type size) {
-            size_ = size;
-            capacity_ = size;
-            array_ = nullptr;
-            if (size) {
-                array_ = new value_type[capacity_];
-            }
-        }
+  explicit vector(size_type size) {
+    size_ = size;
+    capacity_ = size;
+    array_ = nullptr;
+    if (size) {
+      array_ = new value_type[capacity_];
+    }
+  }
 
-        vector(std::initializer_list<value_type> const &init) : size_{init.size()}, capacity_{init.size()}, array_{new value_type[capacity_]} {
-            std::copy(init.begin(), init.end(), array_);
-        }
+  vector(std::initializer_list<value_type> const &init)
+      : size_{init.size()},
+        capacity_{init.size()},
+        array_{new value_type[capacity_]} {
+    std::copy(init.begin(), init.end(), array_);
+  }
 
-        vector(const vector &vec) {
-            size_ = vec.size_;
-            capacity_ = vec.capacity_;
-            array_ = nullptr;
-            if (size_) {
-                array_ = new value_type[capacity_];
-            }
-            std::copy(vec.begin(), vec.end(), array_);
-        }
+  vector(const vector &vec) {
+    size_ = vec.size_;
+    capacity_ = vec.capacity_;
+    array_ = nullptr;
+    if (size_) {
+      array_ = new value_type[capacity_];
+    }
+    std::copy(vec.begin(), vec.end(), array_);
+  }
 
-        vector(vector &&vec) noexcept {
-            size_ = std::exchange(vec.size_, 0);
-            capacity_ = std::exchange(vec.capacity_, 0);
-            array_ = std::exchange(vec.array_, nullptr);
-        }
+  vector(vector &&vec) noexcept {
+    size_ = std::exchange(vec.size_, 0);
+    capacity_ = std::exchange(vec.capacity_, 0);
+    array_ = std::exchange(vec.array_, nullptr);
+  }
+  // Destructor
+  ~vector() { delete[] array_; }
+  // Move assignment operator
+  constexpr vector &operator=(vector &&vec) noexcept {
+    if (this != &vec) {
+      size_ = std::exchange(vec.size_, 0);
+      capacity_ = std::exchange(vec.capacity_, 0);
+      array_ = std::exchange(vec.array_, nullptr);
+    }
+    return *this;
+  }
+  // Copy assignment operator
+  constexpr vector &operator=(const vector &vec) {
+    if (this != &vec) {
+      delete[] array_;
 
-        ~vector() {
-            delete[] array_;
-        }
+      if (vec.size_) {
+        array_ = new value_type[vec.capacity_];
+        std::copy(vec.begin(), vec.end(), array_);
+      }
+      size_ = vec.size_;
+      capacity_ = vec.capacity_;
+    }
+    return *this;
+  }
 
-        constexpr vector &operator=(vector &&vec) noexcept {
-            if (this != &vec) {
-                size_ = std::exchange(vec.size_, 0);
-                capacity_ = std::exchange(vec.capacity_, 0);
-                array_ = std::exchange(vec.array_, nullptr);
-            }
-            return *this;
-        }
+  constexpr iterator begin() noexcept { return array_; }
 
-        constexpr vector &operator=(const vector &vec) {
-            if (this != &vec) {
-                delete[] array_;
+  constexpr const_iterator begin() const noexcept { return array_; }
 
-                if (vec.size_) {
-                    array_ = new value_type[vec.capacity_];
-                    std::copy(vec.begin(), vec.end(), array_);
-                }
-                size_ = vec.size_;
-                capacity_ = vec.capacity_;
-            }
-            return *this;
-        }
+  constexpr iterator end() noexcept { return array_ + size_; }
 
-        constexpr iterator begin() noexcept {
-            return array_;
-        }
+  constexpr const_iterator end() const noexcept { return array_ + size_; }
 
-        constexpr const_iterator begin() const noexcept {
-            return array_;
-        }
+  constexpr reference at(size_type pos) {
+    if (pos >= size_)
+      throw std::out_of_range("s21::vector::at The index is out of range");
 
-        constexpr iterator end() noexcept {
-            return array_ + size_;
-        }
+    return array_[pos];
+  }
 
-        constexpr const_iterator end() const noexcept {
-            return array_ + size_;
-        }
+  constexpr const_reference at(size_type pos) const {
+    if (pos >= size_)
+      throw std::out_of_range("s21::vector::at The index is out of range");
 
-        constexpr reference at(size_type pos) {
-            if (pos >= size_)
-                throw std::out_of_range(
-                        "s21::vector::at The index is out of range");
+    return array_[pos];
+  }
 
-            return array_[pos];
-        }
+  constexpr reference operator[](size_type pos) { return at(pos); }
 
-        constexpr const_reference at(size_type pos) const {
-            if (pos >= size_)
-                throw std::out_of_range(
-                        "s21::vector::at The index is out of range");
+  constexpr const_reference operator[](size_type pos) const { return at(pos); }
+  constexpr reference front() {
+    if (!size_)
+      throw std::out_of_range(
+          "s21::vector::front Using methods on a "
+          "zero sized container results ");
 
-            return array_[pos];
-        }
+    return *begin();
+  }
 
-        constexpr reference operator[](size_type pos) {
-            return at(pos);
-        }
+  constexpr const_reference front() const {
+    if (!size_)
+      throw std::out_of_range(
+          "s21::vector::front Using methods on a "
+          "zero sized container results ");
 
-        constexpr const_reference operator[](size_type pos) const {
-            return at(pos);
-        }
-        constexpr reference front() {
-            if (!size_)
-                throw std::out_of_range("s21::vector::front Using methods on a "
-                                        "zero sized container results ");
+    return *begin();
+  }
 
-            return *begin();
-        }
+  constexpr reference back() {
+    if (!size_)
+      throw std::out_of_range(
+          "s21::vector::back Using methods on a "
+          "zero sized container results ");
 
-        constexpr const_reference front() const{
-            if (!size_)
-                throw std::out_of_range("s21::vector::front Using methods on a "
-                                        "zero sized container results ");
+    return *std::prev(end());
+  }
 
-            return *begin();
-        }
+  constexpr const_reference back() const {
+    if (!size_)
+      throw std::out_of_range(
+          "s21::vector::back Using methods on a "
+          "zero sized container results ");
 
-        constexpr reference back() {
-            if (!size_)
-                throw std::out_of_range("s21::vector::back Using methods on a "
-                                        "zero sized container results ");
+    return *std::prev(end());
+  }
 
-            return *std::prev(end());
-        }
+  constexpr iterator data() noexcept { return array_; }
 
-        constexpr const_reference back() const{
-            if (!size_)
-                throw std::out_of_range("s21::vector::back Using methods on a "
-                                        "zero sized container results ");
+  constexpr const_iterator data() const noexcept { return array_; }
 
-            return *std::prev(end());
-        }
+  [[nodiscard]] bool empty() const noexcept { return begin() == end(); }
 
-        constexpr iterator data() noexcept {
-            return array_;
-        }
+  [[nodiscard]] constexpr size_type size() const noexcept {
+    return std::distance(begin(), end());
+  }
 
-        constexpr const_iterator data() const noexcept {
-            return array_;
-        }
+  [[nodiscard]] constexpr size_type max_size() const noexcept {
+    return std::numeric_limits<size_type>::max() / sizeof(value_type) / 2;
+  }
 
-        [[nodiscard]] bool empty() const noexcept {
-            return begin() == end();
-        }
+  constexpr void reserve(size_type new_capacity_) {
+    if (new_capacity_ <= capacity_) return;
 
-        [[nodiscard]] constexpr size_type size() const noexcept {
-            return std::distance(begin(), end());
-        }
+    if (new_capacity_ > max_size())
+      throw std::length_error(
+          "s21::vector::reserve Reserve capacity can't be larger than "
+          "Vector<T>::max_size()");
 
-        [[nodiscard]] constexpr size_type max_size() const noexcept {
-            return std::numeric_limits<size_type>::max() / sizeof(value_type) / 2;
-        }
+    ReallocVec(new_capacity_);
+  }
 
-        constexpr void reserve(size_type new_capacity_) {
-            if (new_capacity_ <= capacity_)
-                return;
+  constexpr size_type capacity() const noexcept { return capacity_; }
 
-            if (new_capacity_ > max_size())
-                throw std::length_error(
-                        "s21::vector::reserve Reserve capacity can't be larger than "
-                        "Vector<T>::max_size()");
+  constexpr void shrink_to_fit() {
+    if (capacity_ == size_) return;
 
-            ReallocVec(new_capacity_);
-        }
+    ReallocVec(size_);
+  }
 
-        constexpr size_type capacity() const noexcept {
-            return capacity_;
-        }
+  constexpr void clear() noexcept { size_ = 0; }
 
-        constexpr void shrink_to_fit() {
-            if (capacity_ == size_)
-                return;
+  constexpr iterator insert(const_iterator pos, value_type &&value) {
+    size_type tmp = pos - begin();
+    if (tmp > size_)
+      throw std::out_of_range(
+          "s21::vector::insert Unable to insert into a position out of "
+          "range of begin() to end()");
 
-            ReallocVec(size_);
-        }
+    if (size_ == capacity_) {
+      if (size_) {
+        ReallocVec(size_ * 2);
+      } else {
+        ReallocVec(1);
+      }
+    }
+    std::copy(begin() + tmp, end(), begin() + tmp + 1);
+    *(array_ + tmp) = std::move(value);
 
-        constexpr void clear() noexcept {
-            size_ = 0;
-        }
+    ++size_;
+    return begin() + tmp;
+  }
 
-        constexpr iterator insert(const_iterator pos, value_type &&value) {
-            size_type tmp = pos - begin();
-            if (tmp > size_)
-                throw std::out_of_range(
-                        "s21::vector::insert Unable to insert into a position out of "
-                        "range of begin() to end()");
+  constexpr iterator insert(const_iterator pos, const_reference value) {
+    size_type tmp = pos - begin();
+    if (tmp > size_)
+      throw std::out_of_range(
+          "s21::vector::insert Unable to insert into a position out of "
+          "range of begin() to end()");
 
-            if (size_ == capacity_) {
-                if (size_) {
-                    ReallocVec(size_ * 2);
-                } else {
-                    ReallocVec(1);
-                }
-            }
-            std::copy(begin() + tmp, end(), begin() + tmp + 1);
-            *(array_ + tmp) = std::move(value);
+    if (size_ == capacity_) {
+      if (size_) {
+        ReallocVec(size_ * 2);
+      } else {
+        ReallocVec(1);
+      }
+    }
+    std::copy(begin() + tmp, end(), begin() + tmp + 1);
+    *(array_ + tmp) = value;
 
-            ++size_;
-            return begin() + tmp;
-        }
+    ++size_;
+    return begin() + tmp;
+  }
 
-        constexpr iterator insert(const_iterator pos, const_reference value) {
-            size_type tmp = pos - begin();
-            if (tmp > size_)
-                throw std::out_of_range(
-                        "s21::vector::insert Unable to insert into a position out of "
-                        "range of begin() to end()");
+  constexpr iterator erase(iterator pos) {
+    size_type tmp = pos - begin();
+    if (tmp >= size_)
+      throw std::out_of_range(
+          "s21::vector::erase Unable to erase a position out of range of "
+          "begin() to end()");
 
-            if (size_ == capacity) {
-                if (size_) {
-                    ReallocVec(size_ * 2);
-                } else {
-                    ReallocVec(1);
-                }
-            }
-            std::copy(begin() + tmp, end(), begin() + tmp + 1);
-            *(array_ + tmp) = value;
+    std::copy(begin(), pos, array_);
+    std::copy(pos + 1, end(), array_ + tmp);
 
-            ++size_;
-            return begin() + tmp;
-        }
+    --size_;
+    return begin() + tmp;
+  }
 
-        constexpr iterator erase(iterator pos) {
-            size_type tmp = pos - begin();
-            if (tmp >= size_)
-                throw std::out_of_range(
-                        "s21::vector::erase Unable to erase a position out of range of "
-                        "begin() to end()");
+  constexpr void push_back(const_reference value) {
+    if (size_ == capacity_) {
+      if (size_) {
+        reserve(size_ * 2);
+      } else {
+        reserve(1);
+      }
+    }
+    array_[size_] = std::move(value);
+    ++size_;
+  }
 
-            std::copy(begin(), pos, array_);
-            std::copy(pos + 1, end(), array_ + tmp);
+  constexpr void push_back(value_type &&value) {
+    if (size_ == capacity_) {
+      if (size_) {
+        reserve(size_ * 2);
+      } else {
+        reserve(1);
+      }
+    }
+    array_[size_] = std::move(value);
+    ++size_;
+  }
 
-            --size_;
-            return begin() + tmp;
-        }
+  constexpr void pop_back() {
+    if (size_ == 0)
+      throw std::length_error(
+          "s21::vector::pop_back Calling pop_back on an empty container");
+    --size_;
+  }
 
-        constexpr void push_back(const_reference value) {
-            if (size_ == capacity_) {
-                if (size_) {
-                    reserve(size_ * 2);
-                } else {
-                    reserve(1);
-                }
-            }
-            array_[size_] = std::move(value);
-            ++size_;
-        }
+  constexpr void swap(vector &other) noexcept {
+    std::swap(array_, other.array_);
+    std::swap(size_, other.size_);
+    std::swap(capacity_, other.capacity_);
+  }
+};
 
-        constexpr void push_back(value_type &&value) {
-            if (size_ == capacity_) {
-                if (size_) {
-                    reserve(size_ * 2);
-                } else {
-                    reserve(1);
-                }
-            }
-            array_[size_] = std::move(value);
-            ++size_;
-        }
+}  // namespace s21
 
-        constexpr void pop_back() {
-            if (size_ == 0)
-                throw std::length_error(
-                        "s21::vector::pop_back Calling pop_back on an empty container");
-            --size_;
-        }
-
-        constexpr void swap(vector &other) noexcept {
-            std::swap(array_, other.array_);
-            std::swap(size_, other.size_);
-            std::swap(capacity_, other.capacity_);
-        }
-
-    };
-
-}
-
-#endif //CONTAINERS_CPP_VECTOR_H
+#endif  // CONTAINERS_CPP_VECTOR_H
